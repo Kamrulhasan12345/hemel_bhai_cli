@@ -100,13 +100,15 @@ const main = async () => {
             pdfUrl = `https://drive.google.com/uc?id=${id}&export=download`;
             const writer = fs.createWriteStream(`./${folderName}/${j + 1}.pdf`);
             await Miniget(pdfUrl).pipe(writer);
-            writer.close();
+ //           writer.close();
           }
           bar.tick({ currVideos: j + 1, totVideos: videos.length });
         }
       }
     }
   }
+  // await yt.call
+  (process as any)?._getActiveHandles()
 };
 
 await main();
