@@ -1,0 +1,33 @@
+{
+  "name": "hemel_vai_dl",
+  "module": "index.ts",
+  "type": "module",
+  "license": "MIT",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:Kamrulhasan12345/hemel_bhai_cli.git",
+  "author": "Mohammad Kamrul Hasan <kamrulhasan59246@gmail.com>",
+  "devDependencies": {
+    "@types/progress": "^2.0.5",
+    "bun-types": "latest",
+    "ts-node": "^10.9.1",
+    "tsm": "^2.3.0",
+    "typescript": "^5.2.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "ansi-colors": "^4.1.3",
+    "cli-progress": "^3.12.0",
+    "coherentpdf": "^2.5.5",
+    "enquirer": "^2.4.1",
+    "figures": "^5.0.0",
+    "miniget": "^4.2.3",
+    "ora": "^7.0.1",
+    "progress": "^2.0.3",
+    "sanitize-filename": "^1.6.3",
+    "supports-color": "^9.4.0",
+    "youtubei.js": "^6.4.1"
+  }
+}
