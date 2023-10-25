@@ -7,7 +7,7 @@
   "repository": "git@github.com:Kamrulhasan12345/hemel_bhai_cli.git",
   "author": "Mohammad Kamrul Hasan <kamrulhasan59246@gmail.com>",
   "devDependencies": {
-    "@types/node": "^20.8.3",
+    "@types/node": "^20.8.8",
     "@types/progress": "^2.0.5",
     "bun-types": "latest",
     "typescript": "^5.2.2"
