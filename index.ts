@@ -42,12 +42,12 @@ const main = async () => {
 
   spinner.stop();
 
-  const choices = playlists.map((v) => ({
+  const playlistChoices = playlists.map((v) => ({
     name: v.title.text as string,
   }));
 
   const answer: Record<string, string[]> = await enquirer.prompt({
-    choices: choices,
+    choices: playlistChoices,
     // @ts-ignore
     footer() {
       return colors.dim("(Scroll up and down to reveal more choices)");
@@ -74,26 +74,61 @@ const main = async () => {
     ),
   );
 
-  const totalVideoCount = selectedPlaylists
-    .map((v) => Number(v.video_count_short.text as string))
-    .reduce((a, b) => a + b, 0);
-
   for (let i = 0; i < selectedPlaylists.length; i++) {
     const videos = (await yt.getPlaylist(selectedPlaylists[i].id)).videos;
+    const videoChoices = videos.map((v, n) => ({
+      name: v.title.text,
+      value: n,
+    }));
+    const videoAnswers: Record<string, string[]> = await enquirer.prompt({
+      choices: videoChoices,
+      // @ts-ignore
+      footer() {
+        return colors.dim("(Scroll up and down to reveal more choices)");
+      },
+      // @ts-ignore
+      limit: 10,
+      message: `Select one or more lecture(s) for ${selectedPlaylists[i].title.text}:`,
+      multiple: true,
+      name: "0",
+      sort: true,
+      // @ts-ignore
+      symbols: {
+        indicator: {
+          on: colors.green(figures.circleFilled),
+          off: colors.green(figures.circle),
+        },
+      },
+      type: "autocomplete",
+    });
+    const selectedVideos = videoChoices
+      .filter((v) =>
+        videoAnswers[0].some(
+          (v2) => v2.localeCompare(v.name as string, LOCALE) === 0,
+        ),
+      )
+      .map((v) => v.value);
+    if (selectedVideos.length === 0) {
+      console.log(
+        colors.yellow(`Skipping playlist ${selectedPlaylists[i].title.text}`),
+      );
+      continue;
+    }
     console.log("Downloading: %s", selectedPlaylists[i].title.text);
     const bar = new ProgressBar(
       "     :bar :percent :currVideos/:totVideos lectures eta :etas",
       {
-        total: videos.length,
+        total: selectedVideos.length,
         clear: true,
         width: 100,
         complete: colors.green("━"),
-        incomplete: colors.white("━"),
+        incomplete: colors.red("━"),
       },
     );
     const folderName = sanitize(selectedPlaylists[i].title.text as string);
     if (!fs.existsSync(folderName)) await fs.promises.mkdir(folderName);
-    for (let j = 0; j < videos.length; j++) {
+    for (let j = 0, k = 1; j < videos.length; j++) {
+      if (!selectedVideos.includes(j)) continue;
       const videoDescParts = (
         await yt.getBasicInfo((videos[j] as any).id as string)
       ).basic_info.short_description?.split("\n");
@@ -111,7 +146,6 @@ const main = async () => {
           const reader = await axios.get(pdfUrl, { responseType: "stream" });
           writer.on("finish", () => {
             writer.close();
-            bar.tick(0, { currVideos: j + 1, totVideos: videos.length });
           });
           writer.on("error", (err) => {
             fs.unlink(fileName, (err) => console.error(err));
@@ -119,8 +153,8 @@ const main = async () => {
           });
           reader.data.on("data", (chunk: any) =>
             bar.tick(chunk.length / Number(reader.headers["content-length"]), {
-              currVideos: j,
-              totVideos: videos.length,
+              currVideos: k,
+              totVideos: selectedVideos.length,
             }),
           );
           reader.data.on("error", (err: any) => {
@@ -130,10 +164,14 @@ const main = async () => {
           await pipeline(reader.data, writer).then(
             () => reader.data?.destroy(),
           );
-        } else bar.tick({ currVideos: j, totVideos: videos.length });
+        } else bar.tick({ currVideos: k, totVideos: selectedVideos.length });
       }
+      k++;
     }
-    console.log(colors.green("\nSuccessfully downloaded %s"), selectedPlaylists[i].title?.text);
+    console.log(
+      colors.green("\nSuccessfully downloaded %s"),
+      selectedPlaylists[i].title?.text,
+    );
   }
 };
 
