@@ -3,7 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "repository": "git@github.com:Kamrulhasan12345/hemel_bhai_cli.git",
   "author": "Mohammad Kamrul Hasan <kamrulhasan59246@gmail.com>",
   "devDependencies": {
