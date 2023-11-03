@@ -17,12 +17,46 @@ const LOCALE = "en-US-u-co-bn";
 
 const pipeline = promisify(stream.pipeline);
 
+/*const mergePdf = async(inputs: string[], output: string) => {
+  // use pdf-lib to merge pdfs together
+  import { PDFDocument } from 'pdf-lib';
+
+  const mergePdf = async (inputs: string[], output: string) => {
+    const mergedPdf = await PDFDocument.create();
+
+    for (const input of inputs) {
+      const pdfBytes = await fetchPdfBytes(input);
+      const pdf = await PDFDocument.load(pdfBytes);
+
+      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+      copiedPages.forEach((page) => mergedPdf.addPage(page));
+    }
+
+    const mergedPdfBytes = await mergedPdf.save();
+
+    // Save the merged PDF to the specified output file
+    await savePdfBytes(output, mergedPdfBytes);
+  };
+
+  const fetchPdfBytes = async (url: string) => {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    return response.data;
+  };
+
+  const savePdfBytes = async (path: string, pdfBytes: Uint8Array) => {
+    await fs.promises.writeFile(path, pdfBytes);
+  };
+}*/
+
 const main = async () => {
   const spinner = ora("Intitializing...").start();
+
   const yt = await Innertube.create();
   const channel = await yt.getChannel(CHANNEL_ID);
+
   spinner.color = "green";
   spinner.text = "Fetching playlists...";
+
   const playlists = (await channel.getPlaylists()).playlists
     .filter(
       (v, i, a) =>
@@ -46,7 +80,7 @@ const main = async () => {
     name: v.title.text as string,
   }));
 
-  const answer: Record<string, string[]> = await enquirer.prompt({
+  const playlistAnswers: Record<string, string[]> = await enquirer.prompt({
     choices: playlistChoices,
     // @ts-ignore
     footer() {
@@ -69,17 +103,19 @@ const main = async () => {
   });
 
   const selectedPlaylists = playlists.filter((v) =>
-    answer[0].some(
+    playlistAnswers[0].some(
       (v2) => v2.localeCompare(v.title.text as string, LOCALE) === 0,
     ),
   );
 
   for (let i = 0; i < selectedPlaylists.length; i++) {
     const videos = (await yt.getPlaylist(selectedPlaylists[i].id)).videos;
+
     const videoChoices = videos.map((v, n) => ({
       name: v.title.text,
       value: n,
     }));
+
     const videoAnswers: Record<string, string[]> = await enquirer.prompt({
       choices: videoChoices,
       // @ts-ignore
@@ -101,6 +137,7 @@ const main = async () => {
       },
       type: "autocomplete",
     });
+
     const selectedVideos = videoChoices
       .filter((v) =>
         videoAnswers[0].some(
@@ -108,13 +145,16 @@ const main = async () => {
         ),
       )
       .map((v) => v.value);
+
     if (selectedVideos.length === 0) {
       console.log(
         colors.yellow(`Skipping playlist ${selectedPlaylists[i].title.text}`),
       );
       continue;
     }
+
     console.log("Downloading: %s", selectedPlaylists[i].title.text);
+
     const bar = new ProgressBar(
       "     :bar :percent :currVideos/:totVideos lectures eta :etas",
       {
@@ -125,18 +165,24 @@ const main = async () => {
         incomplete: colors.red("━"),
       },
     );
+
     const folderName = sanitize(selectedPlaylists[i].title.text as string);
+
     if (!fs.existsSync(folderName)) await fs.promises.mkdir(folderName);
+
     for (let j = 0, k = 1; j < videos.length; j++) {
       if (!selectedVideos.includes(j)) continue;
+
       const videoDescParts = (
         await yt.getBasicInfo((videos[j] as any).id as string)
       ).basic_info.short_description?.split("\n");
+
       if (videoDescParts) {
         let pdfUrl: string = "";
         const pdfIndex = videoDescParts.findIndex((part) =>
           part.includes("PDF"),
         );
+
         if (pdfIndex !== -1 && pdfIndex < videoDescParts.length - 1) {
           const urlParts = videoDescParts[pdfIndex + 1].split("/");
           const id = urlParts[urlParts.length - 2];
@@ -172,6 +218,8 @@ const main = async () => {
       colors.green("\nSuccessfully downloaded %s"),
       selectedPlaylists[i].title?.text,
     );
+    // now comes merging and n-up imposing
+    
   }
 };
 
