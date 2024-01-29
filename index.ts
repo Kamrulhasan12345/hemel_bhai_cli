@@ -49,178 +49,199 @@ const pipeline = promisify(stream.pipeline);
 }*/
 
 const main = async () => {
-  const spinner = ora("Intitializing...").start();
+	const spinner = ora("Intitializing...").start();
 
-  const yt = await Innertube.create();
-  const channel = await yt.getChannel(CHANNEL_ID);
+	const yt = await Innertube.create();
+	const channel = await yt.getChannel(CHANNEL_ID);
 
-  spinner.color = "green";
-  spinner.text = "Fetching playlists...";
+	spinner.color = "green";
+	spinner.text = "Fetching playlists...";
 
-  const playlists = (await channel.getPlaylists()).playlists
-    .filter(
-      (v, i, a) =>
-        i ===
-        a.findIndex(
-          (v2) =>
-            v2.title.text?.localeCompare(v.title.text as string, LOCALE) === 0,
-        ),
-    )
-    .map((v) => {
-      v.video_count_short.text =
-        v.video_count_short.text ??
-        // @ts-ignore
-        (/\d+/g.exec(v.video_count.text as string)[0] as string);
-      return v;
-    });
+	const playlists = [];
+	const playlistTab = await channel.getPlaylists();
+	let page = playlistTab.has_continuation ? playlistTab : null;
 
-  spinner.stop();
+	playlists.push(...playlistTab.playlists);
+	while (page && page.has_continuation) {
+		page = (await page.getContinuation()) as any;
+		playlists.push(...page.playlists);
+	}
 
-  const playlistChoices = playlists.map((v) => ({
-    name: v.title.text as string,
-  }));
+	const playlistChoices = playlists
+		.filter(
+			(v, i, a) =>
+				i ===
+				a.findIndex(
+					(v2) =>
+						v2.title.text?.localeCompare(v.title.text as string, LOCALE) === 0
+				)
+		)
+		.map((v) => ({
+			name: v.title.text as string,
+		}));
 
-  const playlistAnswers: Record<string, string[]> = await enquirer.prompt({
-    choices: playlistChoices,
-    // @ts-ignore
-    footer() {
-      return colors.dim("(Scroll up and down to reveal more choices)");
-    },
-    // @ts-ignore
-    limit: 10,
-    message: "Select one or more playlist(s)",
-    multiple: true,
-    name: "0",
-    sort: true,
-    // @ts-ignore
-    symbols: {
-      indicator: {
-        on: colors.green(figures.circleFilled),
-        off: colors.green(figures.circle),
-      },
-    },
-    type: "autocomplete",
-  });
+	spinner.stop();
 
-  const selectedPlaylists = playlists.filter((v) =>
-    playlistAnswers[0].some(
-      (v2) => v2.localeCompare(v.title.text as string, LOCALE) === 0,
-    ),
-  );
+	const playlistAnswers: Record<string, string[]> = await enquirer.prompt({
+		choices: playlistChoices,
+		// @ts-ignore
+		footer() {
+			return colors.dim("(Scroll up and down to reveal more choices)");
+		},
+		// @ts-ignore
+		limit: 10,
+		message: "Select one or more playlist(s)",
+		multiple: true,
+		name: "0",
+		sort: true,
+		// @ts-ignore
+		symbols: {
+			indicator: {
+				on: colors.green(figures.circleFilled),
+				off: colors.green(figures.circle),
+			},
+		},
+		type: "autocomplete",
+	});
 
-  for (let i = 0; i < selectedPlaylists.length; i++) {
-    const videos = (await yt.getPlaylist(selectedPlaylists[i].id)).videos;
+	const selectedPlaylists = playlists.filter((v) =>
+		playlistAnswers[0].some(
+			(v2) => v2.localeCompare(v.title.text as string, LOCALE) === 0
+		)
+	);
 
-    const videoChoices = videos.map((v, n) => ({
-      name: v.title.text,
-      value: n,
-    }));
+	for (let i = 0; i < selectedPlaylists.length; i++) {
+		const videos = [];
+		const videosTab = await yt.getPlaylist(selectedPlaylists[i].id);
+		videos.push(...videosTab.videos);
+		let page = videosTab.has_continuation ? videosTab : null;
 
-    const videoAnswers: Record<string, string[]> = await enquirer.prompt({
-      choices: videoChoices,
-      // @ts-ignore
-      footer() {
-        return colors.dim("(Scroll up and down to reveal more choices)");
-      },
-      // @ts-ignore
-      limit: 10,
-      message: `Select one or more lecture(s) for ${selectedPlaylists[i].title.text}:`,
-      multiple: true,
-      name: "0",
-      sort: true,
-      // @ts-ignore
-      symbols: {
-        indicator: {
-          on: colors.green(figures.circleFilled),
-          off: colors.green(figures.circle),
-        },
-      },
-      type: "autocomplete",
-    });
+		while (page && page.has_continuation) {
+			page = (await page.getContinuation()) as any;
+			videos.push(...page.videos);
+		}
 
-    const selectedVideos = videoChoices
-      .filter((v) =>
-        videoAnswers[0].some(
-          (v2) => v2.localeCompare(v.name as string, LOCALE) === 0,
-        ),
-      )
-      .map((v) => v.value);
+		const videoChoices = videos
+			.filter(
+				(v, i, a) =>
+					i ===
+					a.findIndex(
+						(v2) =>
+							v2.title.text?.localeCompare(v.title.text as string, LOCALE) === 0
+					)
+			)
+			.map((v, n) => ({
+				name: v.title.text,
+				value: n,
+			}));
 
-    if (selectedVideos.length === 0) {
-      console.log(
-        colors.yellow(`Skipping playlist ${selectedPlaylists[i].title.text}`),
-      );
-      continue;
-    }
+		const videoAnswers: Record<string, string[]> = await enquirer.prompt({
+			choices: videoChoices,
+			// @ts-ignore
+			footer() {
+				return colors.dim("(Scroll up and down to reveal more choices)");
+			},
+			// @ts-ignore
+			limit: 10,
+			message: `Select one or more lecture(s) for ${selectedPlaylists[i].title.text}:`,
+			multiple: true,
+			name: "0",
+			sort: true,
+			// @ts-ignore
+			symbols: {
+				indicator: {
+					on: colors.green(figures.circleFilled),
+					off: colors.green(figures.circle),
+				},
+			},
+			type: "multiselect",
+		});
 
-    console.log("Downloading: %s", selectedPlaylists[i].title.text);
+		const selectedVideos = videoChoices
+			.filter((v) =>
+				videoAnswers[0].some(
+					(v2) => v2.localeCompare(v.name as string, LOCALE) === 0
+				)
+			)
+			.map((v) => v.value);
 
-    const bar = new ProgressBar(
-      "     :bar :percent :currVideos/:totVideos lectures eta :etas",
-      {
-        total: selectedVideos.length,
-        clear: true,
-        width: 100,
-        complete: colors.green("━"),
-        incomplete: colors.red("━"),
-      },
-    );
+		if (selectedVideos.length === 0) {
+			console.log(
+				colors.yellow(`Skipping playlist ${selectedPlaylists[i].title.text}`)
+			);
+			continue;
+		}
 
-    const folderName = sanitize(selectedPlaylists[i].title.text as string);
+		console.log("Downloading: %s", selectedPlaylists[i].title.text);
 
-    if (!fs.existsSync(folderName)) await fs.promises.mkdir(folderName);
+		const bar = new ProgressBar(
+			"     :bar :percent :currVideos/:totVideos lectures eta :etas",
+			{
+				total: selectedVideos.length,
+				clear: true,
+				width: 100,
+				complete: colors.green("━"),
+				incomplete: colors.red("━"),
+			}
+		);
 
-    for (let j = 0, k = 1; j < videos.length; j++) {
-      if (!selectedVideos.includes(j)) continue;
+		const folderName = sanitize(selectedPlaylists[i].title.text as string);
 
-      const videoDescParts = (
-        await yt.getBasicInfo((videos[j] as any).id as string)
-      ).basic_info.short_description?.split("\n");
+		if (!fs.existsSync(folderName)) await fs.promises.mkdir(folderName);
 
-      if (videoDescParts) {
-        let pdfUrl: string = "";
-        const pdfIndex = videoDescParts.findIndex((part) =>
-          part.includes("PDF"),
-        );
+		for (let j = 0, k = 1; j < videos.length; j++) {
+			if (!selectedVideos.includes(j)) continue;
 
-        if (pdfIndex !== -1 && pdfIndex < videoDescParts.length - 1) {
-          const urlParts = videoDescParts[pdfIndex + 1].split("/");
-          const id = urlParts[urlParts.length - 2];
-          pdfUrl = `https://drive.google.com/uc?id=${id}&export=download`;
-          const fileName = `./${folderName}/${j + 1}.pdf`;
-          const writer = fs.createWriteStream(fileName);
-          const reader = await axios.get(pdfUrl, { responseType: "stream" });
-          writer.on("finish", () => {
-            writer.close();
-          });
-          writer.on("error", (err) => {
-            fs.unlink(fileName, (err) => console.error(err));
-            console.error(err);
-          });
-          reader.data.on("data", (chunk: any) =>
-            bar.tick(chunk.length / Number(reader.headers["content-length"]), {
-              currVideos: k,
-              totVideos: selectedVideos.length,
-            }),
-          );
-          reader.data.on("error", (err: any) => {
-            fs.unlink(fileName, (err) => console.error(err));
-            console.error(err);
-          });
-          await pipeline(reader.data, writer).then(
-            () => reader.data?.destroy(),
-          );
-        } else bar.tick({ currVideos: k, totVideos: selectedVideos.length });
-      }
-      k++;
-    }
-    console.log(
-      colors.green("\nSuccessfully downloaded %s"),
-      selectedPlaylists[i].title?.text,
-    );
-    // now comes merging and n-up imposing
-    
-  }
+			const videoDescParts = (
+				await yt.getBasicInfo((videos[j] as any).id as string)
+			).basic_info.short_description?.split("\n");
+
+			if (videoDescParts) {
+				let pdfUrl: string = "";
+				const pdfIndex = videoDescParts.findIndex((part) =>
+					part.includes("PDF")
+				);
+				// currently issues are in organic chemistry pdf downlaoding as the list there is too big
+				// to download and end up in a rate-limitigng forbidden 403 issue whether I use 3 second extra or not
+
+				if (pdfIndex !== -1 && pdfIndex < videoDescParts.length - 1) {
+					const urlParts = videoDescParts[pdfIndex + 1].split("/");
+					const id = urlParts[urlParts.length - 2];
+					pdfUrl = `https://drive.google.com/uc?id=${id}&export=download`;
+					const fileName = `./${folderName}/${j + 1}.pdf`;
+					const writer = fs.createWriteStream(fileName);
+					const reader = await axios.get(pdfUrl, { responseType: "stream" });
+					writer.on("finish", () => {
+						writer.close();
+					});
+					writer.on("error", (err) => {
+						fs.unlink(fileName, (err) => console.error(err));
+						console.error(err);
+					});
+					reader.data.on("data", (chunk: any) =>
+						bar.tick(chunk.length / Number(reader.headers["content-length"]), {
+							currVideos: k,
+							totVideos: selectedVideos.length,
+						})
+					);
+					reader.data.on("error", (err: any) => {
+						fs.unlink(fileName, (err) => console.error(err));
+						console.error(err);
+					});
+					await pipeline(reader.data, writer)
+						.then(() => reader.data?.destroy())
+						.catch((e) => console.log("I've found an error!", e));
+					//currently planning to add retry thing
+				} else bar.tick({ currVideos: k, totVideos: selectedVideos.length });
+			}
+			k++;
+		}
+		console.log(
+			colors.green("\nSuccessfully downloaded %s"),
+			selectedPlaylists[i].title?.text
+		);
+		// now comes merging and n-up imposing
+	}
 };
 
 await main();
