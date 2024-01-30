@@ -57,13 +57,14 @@ const main = async () => {
 	spinner.color = "green";
 	spinner.text = "Fetching playlists...";
 
-	const playlists = [];
+	const playlists: any[] = [];
 	const playlistTab = await channel.getPlaylists();
 	let page = playlistTab.has_continuation ? playlistTab : null;
 
 	playlists.push(...playlistTab.playlists);
 	while (page && page.has_continuation) {
 		page = (await page.getContinuation()) as any;
+		// @ts-ignore
 		playlists.push(...page.playlists);
 	}
 
@@ -80,7 +81,7 @@ const main = async () => {
 			name: v.title.text as string,
 		}));
 
-	spinner.stop();
+	spinner.stop()
 
 	const playlistAnswers: Record<string, string[]> = await enquirer.prompt({
 		choices: playlistChoices,
@@ -111,13 +112,14 @@ const main = async () => {
 	);
 
 	for (let i = 0; i < selectedPlaylists.length; i++) {
-		const videos = [];
+		const videos: any[] = [];
 		const videosTab = await yt.getPlaylist(selectedPlaylists[i].id);
 		videos.push(...videosTab.videos);
 		let page = videosTab.has_continuation ? videosTab : null;
 
 		while (page && page.has_continuation) {
 			page = (await page.getContinuation()) as any;
+			// @ts-ignore
 			videos.push(...page.videos);
 		}
 
