@@ -351,10 +351,10 @@ utf8-byte-length@^1.0.1:
   resolved "https://registry.yarnpkg.com/utf8-byte-length/-/utf8-byte-length-1.0.4.tgz#f45f150c4c66eee968186505ab93fcbb8ad6bf61"
   integrity sha512-4+wkEYLBbWxqTahEsWrhxepcoVOJ+1z5PGIjPZxRkytcdSUaNjIjBM7Xn8E+pdSuV7SzvWovBFA54FO0JSoqhA==
 
-youtubei.js@^9.0.1:
-  version "9.0.1"
-  resolved "https://registry.yarnpkg.com/youtubei.js/-/youtubei.js-9.0.1.tgz#2aa5637e7692c8afac4a6969e44c46215cb9f10d"
-  integrity sha512-41ZqulZh5lgMHgCgCiQNqme9kMJDVLQc9pMnoVEtQF9uyaGe05wdfNYmFzzBP1o1Va1IDhtJqmHwGUODxn8w+w==
+youtubei.js@^9.1.0:
+  version "9.1.0"
+  resolved "https://registry.yarnpkg.com/youtubei.js/-/youtubei.js-9.1.0.tgz#bcf154c9fa21d3c8c1d00a5e10360d0a065c660e"
+  integrity sha512-C5GBJ4LgnS6vGAUkdIdQNOFFb5EZ1p3xBvUELNXmIG3Idr6vxWrKNBNy8ClZT3SuDVXaAJqDgF9b5jvY8lNKcg==
   dependencies:
     jintr "^1.1.0"
     tslib "^2.5.0"
