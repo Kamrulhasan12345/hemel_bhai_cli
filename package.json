@@ -25,6 +25,6 @@
     "pdf-lib": "^1.17.1",
     "progress": "^2.0.3",
     "sanitize-filename": "^1.6.3",
-    "youtubei.js": "^9.0.1"
+    "youtubei.js": "^9.1.0"
   }
 }
