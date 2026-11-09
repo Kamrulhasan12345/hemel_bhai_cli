@@ -267,10 +267,10 @@ restore-cursor@^4.0.0:
     onetime "^5.1.0"
     signal-exit "^3.0.2"
 
-sanitize-filename@^1.6.3:
-  version "1.6.3"
-  resolved "https://registry.yarnpkg.com/sanitize-filename/-/sanitize-filename-1.6.3.tgz#755ebd752045931977e30b2025d340d7c9090378"
-  integrity sha512-y/52Mcy7aw3gRm7IrcGDFx/bCk4AhRh2eI9luHOQM86nZsqwiRkkq2GekHXBBD+SmPidc8i2PqtYZl+pWJ8Oeg==
+sanitize-filename@^1.6.5:
+  version "1.6.5"
+  resolved "https://registry.yarnpkg.com/sanitize-filename/-/sanitize-filename-1.6.5.tgz#169cd02f71b5f894ac9c120ba845904f35af8dd1"
+  integrity sha512-+dVApt46/oAFWRP0KBSnYNLRw1peY7o/b12tmpllPNFpjfwkPuZut1+DiKaD9zYx5r2SHwc+XMLSBaDiyUJw3g==
   dependencies:
     truncate-utf8-bytes "^1.0.0"
 
